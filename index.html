@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Реклама</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -48,11 +47,13 @@
       color: white;
       background: #2196F3;
       box-shadow: 0 4px 10px rgba(33,150,243,0.3);
+      cursor: pointer;
       transition: transform 0.1s, opacity 0.2s;
     }
     .custom-btn:active { transform: scale(0.97); }
     .btn-green { background: #4CAF50; box-shadow: 0 4px 10px rgba(76,175,80,0.3); }
     .btn-purple { background: #9C27B0; box-shadow: 0 4px 10px rgba(156,39,176,0.3); }
+    .btn-orange { background: #FF9800; box-shadow: 0 4px 10px rgba(255,152,0,0.3); }
   </style>
 </head>
 <body>
@@ -62,24 +63,43 @@
     <a href="https://example.com" target="_blank" class="ad-btn">Перейти на сайт</a>
   </div>
 
-  <button class="custom-btn" onclick="sendData('start')">🟢 Старт</button>
-  <button class="custom-btn btn-green" onclick="sendData('info')">ℹ️ Информация</button>
-  <button class="custom-btn btn-purple" onclick="sendData('support')">🛠 Поддержка</button>
+  <button class="custom-btn" id="btn-start">🟢 Старт</button>
+  <button class="custom-btn btn-green" id="btn-info">ℹ️ Информация</button>
+  <button class="custom-btn btn-purple" id="btn-support">🛠 Поддержка</button>
+  <!-- Кнопка для предложения рекламы (видна всем) -->
+  <button class="custom-btn btn-orange" id="btn-advertise">📢 Предложить рекламу</button>
 
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
-    Telegram.WebApp.ready();
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.ready();
 
-    function sendData(action) {
-      Telegram.WebApp.sendData(JSON.stringify({ action: action }));
-      Telegram.WebApp.close();
-    }
+        if (Telegram.WebApp.colorScheme === 'dark') {
+          document.documentElement.style.setProperty('--tg-theme-bg-color', '#1e1e1e');
+          document.documentElement.style.setProperty('--tg-theme-text-color', '#ffffff');
+        }
 
-    // Адаптация цветов под тему Telegram
-    const root = document.documentElement;
-    if (window.Telegram.WebApp.colorScheme === 'dark') {
-      root.style.setProperty('--tg-theme-bg-color', '#1e1e1e');
-      root.style.setProperty('--tg-theme-text-color', '#ffffff');
-    }
+        document.getElementById('btn-start').addEventListener('click', () => {
+          Telegram.WebApp.sendData(JSON.stringify({ action: 'start' }));
+          Telegram.WebApp.close();
+        });
+        document.getElementById('btn-info').addEventListener('click', () => {
+          Telegram.WebApp.sendData(JSON.stringify({ action: 'info' }));
+          Telegram.WebApp.close();
+        });
+        document.getElementById('btn-support').addEventListener('click', () => {
+          Telegram.WebApp.sendData(JSON.stringify({ action: 'support' }));
+          Telegram.WebApp.close();
+        });
+        document.getElementById('btn-advertise').addEventListener('click', () => {
+          // Открываем страницу с формой предложения рекламы
+          window.location.href = 'advertise.html';
+        });
+      } else {
+        document.body.innerHTML = '<p style="color:red; padding:20px;">Ошибка загрузки WebApp. Обновите Telegram.</p>';
+      }
+    });
   </script>
 </body>
 </html>
