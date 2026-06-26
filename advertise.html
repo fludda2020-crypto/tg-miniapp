@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://telegram.org 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self' https://web.telegram.org;">
+  <meta name="referrer" content="no-referrer">
   <title>Предложить рекламу</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -90,10 +92,16 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       if (!window.Telegram || !Telegram.WebApp) {
-        document.body.innerHTML = '<p style="color:red;">Ошибка. Обновите Telegram.</p>';
+        document.body.textContent = 'Ошибка. Обновите Telegram.';
         return;
       }
       Telegram.WebApp.ready();
+
+      // Validate that the app is opened from a legitimate Telegram context
+      if (!Telegram.WebApp.initData || Telegram.WebApp.initData.length === 0) {
+        document.body.textContent = 'Ошибка: приложение должно быть открыто из Telegram.';
+        return;
+      }
 
       const textarea = document.getElementById('ad-text');
       const charCount = document.getElementById('char-count');
@@ -109,14 +117,27 @@
       // Превью фото
       photoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            preview.src = ev.target.result;
-            preview.style.display = 'block';
-          };
-          reader.readAsDataURL(file);
+        if (!file) return;
+
+        // Validate file type and size (max 5MB)
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          Telegram.WebApp.showAlert('Допустимые форматы: JPEG, PNG, GIF, WebP.');
+          photoInput.value = '';
+          return;
         }
+        if (file.size > 5 * 1024 * 1024) {
+          Telegram.WebApp.showAlert('Файл слишком большой (макс. 5 МБ).');
+          photoInput.value = '';
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          preview.src = ev.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
       });
 
       // Отправка
@@ -127,12 +148,19 @@
           return;
         }
 
+        // Sanitize text input: strip HTML tags and limit length
+        const sanitized = text.replace(/<[^>]*>/g, '').substring(0, 450);
+        if (!sanitized) {
+          Telegram.WebApp.showAlert('Некорректный текст.');
+          return;
+        }
+
         submitBtn.disabled = true;
         submitBtn.textContent = 'Отправка...';
 
         const data = {
           action: 'advertise',
-          text: text,
+          text: sanitized,
           photo: null
         };
 
